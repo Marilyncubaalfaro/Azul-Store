@@ -1,22 +1,19 @@
-import React from 'react';
-import { useCart } from '../../context/CartContext';
-import './ProductCard.css';
+import React from "react";
+import { useCart } from "../../context/CartContext";
+import { formatPrice } from "../../utils/price";
+import "./ProductCard.css";
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
-
-  const formatPrice = (price) => {
-    return `S/ ${price.toFixed(2)}`;
-  };
 
   return (
     <article className="product-card">
       {product.badge && (
         <span className="badge">
-          {product.badge.split('\n').map((text, index) => (
+          {product.badge.split("\n").map((text, index) => (
             <React.Fragment key={index}>
               {text}
-              {index < product.badge.split('\n').length - 1 && <br />}
+              {index < product.badge.split("\n").length - 1 && <br />}
             </React.Fragment>
           ))}
         </span>
@@ -26,8 +23,10 @@ export default function ProductCard({ product }) {
         <small>{product.brand}</small>
         <h3>{product.name}</h3>
         <p>
-          <strong>{formatPrice(product.price)}</strong>{' '}
-          {product.originalPrice && <span>{formatPrice(product.originalPrice)}</span>}
+          <strong>{formatPrice(product.price)}</strong>{" "}
+          {product.originalPrice && (
+            <span>{formatPrice(product.originalPrice)}</span>
+          )}
         </p>
         <button
           className="add-to-cart-btn"

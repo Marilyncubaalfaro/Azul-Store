@@ -1,26 +1,11 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { PRODUCTS, BRANDS } from '../../data/products';
-import ProductCard from '../../components/ProductCard';
-import './Home.css';
+import React from "react";
+import { PRODUCTS, BRANDS } from "../../data/products";
+import ProductCard from "../../components/ProductCard";
+import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
+import "./Home.css";
 
 export default function Home() {
-  const { hash } = useLocation();
-
-  useEffect(() => {
-    if (hash) {
-      const id = hash.replace('#', '');
-      const element = document.getElementById(id);
-      if (element) {
-        // Un pequeño retraso asegura que el DOM se haya renderizado
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    } else {
-      window.scrollTo(0, 0);
-    }
-  }, [hash]);
+  useScrollOnRouteChange();
 
   return (
     <>
@@ -53,7 +38,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="products" id="fiestas" aria-label="Productos destacados">
+      <section
+        className="products"
+        id="fiestas"
+        aria-label="Productos destacados"
+      >
         {PRODUCTS.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
