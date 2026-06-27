@@ -1,0 +1,77 @@
+/* ===== Product Card ===== */
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4.1;
+  object-fit: cover;
+  background: var(--soft);
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 4px 7px;
+  background: #202020;
+  color: #fff;
+  font-size: 9px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.product-card div {
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-card small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.product-card h3 {
+  margin: 4px 0 6px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.product-card p {
+  margin: 0;
+  font-size: 11px;
+}
+
+.product-card span:not(.badge) {
+  margin-left: 6px;
+  color: #aaa;
+  text-decoration: line-through;
+}
+
+/* ===== Add to Cart Button ===== */
+.add-to-cart-btn {
+  margin-top: auto;
+  background: var(--dark);
+  color: #fff;
+  border: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: background 0.2s ease;
+  width: 100%;
+}
+
+.add-to-cart-btn:hover {
+  background: var(--accent);
+}

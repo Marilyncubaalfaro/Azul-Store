@@ -1,0 +1,82 @@
+/* ===== Footer ===== */
+.site-footer {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.15fr 2.4fr;
+  gap: 46px;
+  padding: 52px 45px 54px;
+  background: var(--dark);
+  color: #fff;
+}
+
+.site-footer a,
+.site-footer p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.site-footer h2 {
+  margin: 0;
+  margin-bottom: 24px;
+  font-size: 16px;
+  font-weight: 400;
+  color: #fff;
+}
+
+.site-footer a {
+  display: block;
+  margin: 7px 0;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+/* ===== Newsletter ===== */
+.newsletter {
+  min-width: 0;
+}
+
+.newsletter p {
+  margin: 0 0 20px;
+  font-size: 12px;
+}
+
+.newsletter label span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.newsletter input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+}
+
+.newsletter button {
+  margin-top: 13px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.newsletter .form-message {
+  min-height: 16px;
+  margin: 12px 0 0;
+  color: #fff;
+}
+
+/* ===== Responsive Footer ===== */
+@media (max-width: 820px) {
+  .site-footer {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 38px 26px;
+  }
+}

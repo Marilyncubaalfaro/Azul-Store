@@ -1,0 +1,55 @@
+/* ===== Design Tokens ===== */
+:root {
+  --paper: #f4faef;
+  --ink: #141414;
+  --muted: #74746f;
+  --line: #1a1a1a;
+  --accent: #8a6a55;
+  --soft: #eaded1;
+  --dark: #181818;
+}
+
+/* ===== Reset ===== */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #e1fcfc;
+  color: var(--ink);
+  font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* ===== Shared Layout Constraints ===== */
+.site-header,
+main,
+.site-footer {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+}
+
+main {
+  background: var(--paper);
+}
+
+/* ===== Utility ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
