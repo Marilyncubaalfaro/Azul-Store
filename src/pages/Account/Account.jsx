@@ -1,234 +1,208 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
+import { useAuth } from "../../context/AuthContext";
 import "./Account.css";
 
 export default function Account() {
   useScrollOnRouteChange();
+  const {
+    user,
+    isAuthenticated,
+    isCheckingSession,
+    login,
+    logout,
+    fetchCurrentUser,
+  } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCurrentUser().catch(() => {
+        // Si falla, seguimos mostrando los datos de user entregados por refresh/login.
+      });
+    }
+  }, [isAuthenticated, fetchCurrentUser]);
+
+  const joinDate = useMemo(() => {
+    if (!user?.createdAt) {
+      return "No disponible";
+    }
+
+    const date = new Date(user.createdAt);
+    return Number.isNaN(date.getTime())
+      ? "No disponible"
+      : date.toLocaleDateString("es-PE", {
+          year: "numeric",
+          month: "long",
+        });
+  }, [user]);
+
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+    setLoginError("");
+    setIsSubmitting(true);
+
+    try {
+      await login(email.trim(), password);
+      setPassword("");
+    } catch (error) {
+      setLoginError(error.message || "No se pudo iniciar sesion.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoginError("");
+    await logout();
+  };
+
+  if (isCheckingSession) {
+    return (
+      <div className="account-page">
+        <div className="account-status-card">Verificando sesion activa...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="account-page">
+        <header className="account-header">
+          <h1>Mi Cuenta</h1>
+          <p>
+            Inicia sesion para ver tu perfil, historial de pedidos y
+            direcciones.
+          </p>
+        </header>
+
+        <section className="login-section" aria-labelledby="login-title">
+          <div className="login-card">
+            <h2 id="login-title">Iniciar sesion</h2>
+            <p className="login-hint">
+              Usa el email y clave con los que te registraste en Azul Store.
+            </p>
+
+            <form className="login-form" onSubmit={handleLoginSubmit}>
+              <label htmlFor="account-email">Correo</label>
+              <input
+                id="account-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+
+              <label htmlFor="account-password">Contrasena</label>
+              <input
+                id="account-password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={8}
+              />
+
+              {loginError && <p className="login-error">{loginError}</p>}
+
+              <button
+                className="add-to-cart-btn"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Ingresando..." : "Entrar"}
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
-    <div className="account-page" style={{ padding: "40px 45px 80px" }}>
-      <header
-        className="account-header"
-        style={{
-          marginBottom: "40px",
-          borderBottom: "1px solid #141414",
-          paddingBottom: "15px",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "24px",
-            fontWeight: "500",
-            textTransform: "uppercase",
-            letterSpacing: "2px",
-          }}
-        >
-          Mi Cuenta
-        </h1>
-        <p
-          style={{ color: "var(--muted)", fontSize: "13px", marginTop: "6px" }}
-        >
-          Bienvenido de vuelta, Harold.
-        </p>
+    <div className="account-page">
+      <header className="account-header">
+        <h1>Mi Cuenta</h1>
+        <p>Bienvenido de vuelta, {user?.name || "Cliente Azul"}.</p>
       </header>
 
-      <div
-        className="account-container"
-        style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "50px" }}
-      >
-        <aside
-          className="profile-sidebar"
-          style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-        >
-          <div
-            style={{
-              background: "var(--paper)",
-              border: "1px solid #141414",
-              padding: "24px",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "14px",
-                textTransform: "uppercase",
-                marginBottom: "15px",
-              }}
-            >
-              Detalles de Perfil
-            </h2>
-            <p style={{ fontSize: "13px", margin: "6px 0" }}>
-              <strong>Nombre:</strong> Harold Cuba
+      <div className="account-container">
+        <aside className="profile-sidebar">
+          <div className="profile-card">
+            <h2>Detalles de Perfil</h2>
+            <p>
+              <strong>Nombre:</strong> {user?.name || "Sin nombre"}
             </p>
-            <p style={{ fontSize: "13px", margin: "6px 0" }}>
-              <strong>Email:</strong> harold@example.com
+            <p>
+              <strong>Email:</strong> {user?.email || "Sin email"}
             </p>
-            <p style={{ fontSize: "13px", margin: "6px 0" }}>
-              <strong>Socio desde:</strong> Junio, 2026
+            <p>
+              <strong>Socio desde:</strong> {joinDate}
             </p>
             <button
-              className="add-to-cart-btn"
-              style={{ width: "100%", marginTop: "15px", padding: "10px" }}
-              onClick={() => alert("Cerrando sesión...")}
+              className="add-to-cart-btn profile-logout-btn"
+              onClick={handleLogout}
             >
-              Cerrar Sesión
+              Cerrar sesion
             </button>
           </div>
 
-          <div
-            style={{
-              background: "var(--paper)",
-              border: "1px solid #141414",
-              padding: "24px",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "14px",
-                textTransform: "uppercase",
-                marginBottom: "15px",
-              }}
-            >
-              Dirección de Envío
-            </h2>
-            <address
-              style={{
-                fontSize: "13px",
-                fontStyle: "normal",
-                lineHeight: "1.6",
-              }}
-            >
+          <div className="profile-address">
+            <h2>Direccion de envio</h2>
+            <address>
               Av. Larco 123, Dpto 402
               <br />
               Miraflores, Lima
               <br />
-              Perú
+              Peru
             </address>
             <button
-              style={{
-                marginTop: "15px",
-                background: "transparent",
-                border: "1px solid #141414",
-                padding: "8px 12px",
-                fontSize: "11px",
-                cursor: "pointer",
-                textTransform: "uppercase",
-                width: "100%",
-              }}
-              onClick={() => alert("Editar dirección")}
+              className="profile-edit-btn"
+              onClick={() => alert("Editar direccion")}
             >
-              Editar Dirección
+              Editar direccion
             </button>
           </div>
         </aside>
 
         <section className="orders-section">
-          <h2
-            style={{
-              fontSize: "16px",
-              textTransform: "uppercase",
-              marginBottom: "20px",
-            }}
-          >
-            Historial de Pedidos
-          </h2>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-          >
-            <div
-              style={{
-                border: "1px solid #ddd",
-                padding: "20px",
-                background: "#fff",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "10px",
-                  marginBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "13px" }}>
+          <h2>Historial de Pedidos</h2>
+          <div className="orders-list">
+            <div className="order-card">
+              <div className="order-card-header">
+                <span>
                   Pedido <strong>#AZ-9824</strong>
                 </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    background: "#e6d6ff",
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                  }}
-                >
-                  Entregado
-                </span>
+                <span className="order-status">Entregado</span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <div className="order-card-body">
                 <div>
-                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                    Fecha: 15 de Junio, 2026
-                  </p>
-                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                    Items: 1x Conjunto Ivory
-                  </p>
+                  <p>Fecha: 15 de Junio, 2026</p>
+                  <p>Items: 1x Conjunto Ivory</p>
                 </div>
-                <strong style={{ fontSize: "14px" }}>S/ 180.70</strong>
+                <strong>S/ 180.70</strong>
               </div>
             </div>
 
-            <div
-              style={{
-                border: "1px solid #ddd",
-                padding: "20px",
-                background: "#fff",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid #eee",
-                  paddingBottom: "10px",
-                  marginBottom: "10px",
-                }}
-              >
-                <span style={{ fontSize: "13px" }}>
+            <div className="order-card">
+              <div className="order-card-header">
+                <span>
                   Pedido <strong>#AZ-9510</strong>
                 </span>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    background: "#e6d6ff",
-                    padding: "2px 8px",
-                    borderRadius: "999px",
-                  }}
-                >
-                  Entregado
-                </span>
+                <span className="order-status">Entregado</span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <div className="order-card-body">
                 <div>
-                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                    Fecha: 02 de Enero, 2026
-                  </p>
-                  <p style={{ margin: "4px 0", fontSize: "13px" }}>
-                    Items: 1x Vestido Astra
-                  </p>
+                  <p>Fecha: 02 de Enero, 2026</p>
+                  <p>Items: 1x Vestido Astra</p>
                 </div>
-                <strong style={{ fontSize: "14px" }}>S/ 277.20</strong>
+                <strong>S/ 277.20</strong>
               </div>
             </div>
           </div>

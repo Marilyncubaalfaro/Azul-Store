@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
-import './Header.css';
+import React, { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import { useAuth } from "../../context/AuthContext";
+import "./Header.css";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { cartCount } = useCart();
+  const { isAuthenticated, isCheckingSession } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -18,7 +20,12 @@ export default function Header() {
   return (
     <header className="site-header">
       <div className="topbar">
-        <Link className="brand" to="/" aria-label="Azul Store inicio" onClick={closeMenu}>
+        <Link
+          className="brand"
+          to="/"
+          aria-label="Azul Store inicio"
+          onClick={closeMenu}
+        >
           <span className="brand-mark">A</span>
           <span>
             <strong>AZUL</strong>
@@ -27,13 +34,30 @@ export default function Header() {
         </Link>
 
         <div className="header-actions">
-          <Link className="icon-button" to="/account" aria-label="Cuenta" onClick={closeMenu}>
+          <Link
+            className={`icon-button ${isAuthenticated ? "profile-active" : ""}`}
+            to="/account"
+            aria-label={
+              isCheckingSession
+                ? "Verificando sesion"
+                : isAuthenticated
+                  ? "Ir a mi perfil"
+                  : "Iniciar sesion"
+            }
+            title={isAuthenticated ? "Mi perfil" : "Iniciar sesion"}
+            onClick={closeMenu}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 21a8 8 0 0 0-16 0"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </Link>
-          <Link className="icon-button cart-button-container" to="/cart" aria-label="Carrito" onClick={closeMenu}>
+          <Link
+            className="icon-button cart-button-container"
+            to="/cart"
+            aria-label="Carrito"
+            onClick={closeMenu}
+          >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 7h12l-1 14H7L6 7Z"></path>
               <path d="M9 7a3 3 0 0 1 6 0"></path>
@@ -52,32 +76,32 @@ export default function Header() {
         >
           Menu
         </button>
-        <div className={`nav-links ${isMenuOpen ? 'open' : ''}`}>
+        <div className={`nav-links ${isMenuOpen ? "open" : ""}`}>
           <NavLink
             to="/"
             end
-            className={({ isActive }) => (isActive ? 'active' : '')}
+            className={({ isActive }) => (isActive ? "active" : "")}
             onClick={closeMenu}
           >
             Ofertas
           </NavLink>
           <NavLink
             to="/shop/ropa"
-            className={({ isActive }) => (isActive ? 'active' : '')}
+            className={({ isActive }) => (isActive ? "active" : "")}
             onClick={closeMenu}
           >
             Ropa
           </NavLink>
           <NavLink
             to="/shop/beachwear"
-            className={({ isActive }) => (isActive ? 'active' : '')}
+            className={({ isActive }) => (isActive ? "active" : "")}
             onClick={closeMenu}
           >
             Beachwear
           </NavLink>
           <NavLink
             to="/shop/nightwear"
-            className={({ isActive }) => (isActive ? 'active' : '')}
+            className={({ isActive }) => (isActive ? "active" : "")}
             onClick={closeMenu}
           >
             Nightwear
