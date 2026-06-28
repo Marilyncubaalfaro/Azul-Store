@@ -19,11 +19,11 @@ Aplicación web de e-commerce construida con React + Vite.
 
 ## Variables de entorno
 
-Crea archivo .env en esta carpeta si deseas cambiar la URL de la API:
+Crea archivo .env en esta carpeta con la URL de la API:
 
 VITE_API_URL=http://localhost:3000
 
-Si no lo defines, el frontend usa http://localhost:3000 por defecto.
+Esta variable es obligatoria.
 
 ## Instalación
 
