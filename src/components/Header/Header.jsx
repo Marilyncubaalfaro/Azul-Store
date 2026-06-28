@@ -36,7 +36,7 @@ export default function Header() {
         <div className="header-actions">
           <Link
             className={`icon-button ${isAuthenticated ? "profile-active" : ""}`}
-            to="/account"
+            to={isAuthenticated ? "/account" : "/login"}
             aria-label={
               isCheckingSession
                 ? "Verificando sesion"

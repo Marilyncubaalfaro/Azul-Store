@@ -1,31 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
 import { useAuth } from "../../context/AuthContext";
 import "./Account.css";
 
 export default function Account() {
   useScrollOnRouteChange();
-  const {
-    user,
-    isAuthenticated,
-    isCheckingSession,
-    login,
-    logout,
-    fetchCurrentUser,
-  } = useAuth();
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginError, setLoginError] = useState("");
+  const { user, logout, fetchCurrentUser } = useAuth();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchCurrentUser().catch(() => {
-        // Si falla, seguimos mostrando los datos de user entregados por refresh/login.
-      });
-    }
-  }, [isAuthenticated, fetchCurrentUser]);
+    fetchCurrentUser().catch(() => {
+      // Si falla, seguimos mostrando los datos cacheados del contexto.
+    });
+  }, [fetchCurrentUser]);
 
   const joinDate = useMemo(() => {
     if (!user?.createdAt) {
@@ -41,89 +27,9 @@ export default function Account() {
         });
   }, [user]);
 
-  const handleLoginSubmit = async (event) => {
-    event.preventDefault();
-    setLoginError("");
-    setIsSubmitting(true);
-
-    try {
-      await login(email.trim(), password);
-      setPassword("");
-    } catch (error) {
-      setLoginError(error.message || "No se pudo iniciar sesion.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleLogout = async () => {
-    setLoginError("");
     await logout();
   };
-
-  if (isCheckingSession) {
-    return (
-      <div className="account-page">
-        <div className="account-status-card">Verificando sesion activa...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="account-page">
-        <header className="account-header">
-          <h1>Mi Cuenta</h1>
-          <p>
-            Inicia sesion para ver tu perfil, historial de pedidos y
-            direcciones.
-          </p>
-        </header>
-
-        <section className="login-section" aria-labelledby="login-title">
-          <div className="login-card">
-            <h2 id="login-title">Iniciar sesion</h2>
-            <p className="login-hint">
-              Usa el email y clave con los que te registraste en Azul Store.
-            </p>
-
-            <form className="login-form" onSubmit={handleLoginSubmit}>
-              <label htmlFor="account-email">Correo</label>
-              <input
-                id="account-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-
-              <label htmlFor="account-password">Contrasena</label>
-              <input
-                id="account-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={8}
-              />
-
-              {loginError && <p className="login-error">{loginError}</p>}
-
-              <button
-                className="add-to-cart-btn"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Ingresando..." : "Entrar"}
-              </button>
-            </form>
-          </div>
-        </section>
-      </div>
-    );
-  }
 
   return (
     <div className="account-page">

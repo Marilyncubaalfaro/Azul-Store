@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import Account from "./pages/Account";
+import Login from "./pages/Login";
+import RequireAuth from "./components/AuthGuard";
 
 function App() {
   return (
@@ -12,7 +14,15 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/shop/:category" element={<Shop />} />
         <Route path="/cart" element={<Cart />} />
-        <Route path="/account" element={<Account />} />
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/account"
+          element={
+            <RequireAuth>
+              <Account />
+            </RequireAuth>
+          }
+        />
       </Routes>
     </MainLayout>
   );
