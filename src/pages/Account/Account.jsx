@@ -1,11 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
 import { useAuth } from "../../context/AuthContext";
+import { requestJson } from "../../utils/api";
+import { formatPrice } from "../../utils/price";
 import "./Account.css";
 
 export default function Account() {
   useScrollOnRouteChange();
-  const { user, logout, fetchCurrentUser, updateShippingAddress } = useAuth();
+  const { user, accessToken, logout, fetchCurrentUser, updateShippingAddress } =
+    useAuth();
   const [addressForm, setAddressForm] = useState({
     line1: "",
     city: "",
@@ -14,6 +17,9 @@ export default function Account() {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressError, setAddressError] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {
@@ -29,6 +35,51 @@ export default function Account() {
     });
   }, [user]);
 
+  useEffect(() => {
+    if (!accessToken) {
+      setOrders([]);
+      setIsLoadingOrders(false);
+      return;
+    }
+
+    let active = true;
+
+    const loadOrders = async () => {
+      setIsLoadingOrders(true);
+      setOrdersError("");
+
+      try {
+        const data = await requestJson("/orders/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (active) {
+          setOrders(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        if (active) {
+          setOrders([]);
+          setOrdersError(
+            error.message || "No se pudo cargar el historial de pedidos.",
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoadingOrders(false);
+        }
+      }
+    };
+
+    loadOrders();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
+
   const joinDate = useMemo(() => {
     if (!user?.createdAt) {
       return "No disponible";
@@ -42,6 +93,32 @@ export default function Account() {
           month: "long",
         });
   }, [user]);
+
+  const formatOrderDate = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "Fecha no disponible";
+    }
+
+    return date.toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatItemsSummary = (items = []) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return "Sin items";
+    }
+
+    return items
+      .map((item) => {
+        const size = item.size ? ` talla ${item.size}` : "";
+        return `${item.quantity}x ${item.productName}${size}`;
+      })
+      .join(", ");
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -192,39 +269,39 @@ export default function Account() {
 
         <section className="orders-section">
           <h2>Historial de Pedidos</h2>
-          <div className="orders-list">
-            <div className="order-card">
-              <div className="order-card-header">
-                <span>
-                  Pedido <strong>#AZ-9824</strong>
-                </span>
-                <span className="order-status">Entregado</span>
-              </div>
-              <div className="order-card-body">
-                <div>
-                  <p>Fecha: 15 de Junio, 2026</p>
-                  <p>Items: 1x Conjunto Ivory</p>
-                </div>
-                <strong>S/ 180.70</strong>
-              </div>
-            </div>
 
-            <div className="order-card">
-              <div className="order-card-header">
-                <span>
-                  Pedido <strong>#AZ-9510</strong>
-                </span>
-                <span className="order-status">Entregado</span>
-              </div>
-              <div className="order-card-body">
-                <div>
-                  <p>Fecha: 02 de Enero, 2026</p>
-                  <p>Items: 1x Vestido Astra</p>
+          {isLoadingOrders ? (
+            <p className="orders-message">Cargando pedidos...</p>
+          ) : ordersError ? (
+            <p className="orders-error">{ordersError}</p>
+          ) : orders.length === 0 ? (
+            <p className="orders-message">Aun no tienes pedidos registrados.</p>
+          ) : (
+            <div className="orders-list">
+              {orders.map((order) => (
+                <div
+                  className="order-card"
+                  key={order._id || order.orderNumber}
+                >
+                  <div className="order-card-header">
+                    <span>
+                      Pedido <strong>{order.orderNumber}</strong>
+                    </span>
+                    <span className="order-status">
+                      {order.status || "En proceso"}
+                    </span>
+                  </div>
+                  <div className="order-card-body">
+                    <div>
+                      <p>Fecha: {formatOrderDate(order.createdAt)}</p>
+                      <p>Items: {formatItemsSummary(order.items)}</p>
+                    </div>
+                    <strong>{formatPrice(Number(order.total) || 0)}</strong>
+                  </div>
                 </div>
-                <strong>S/ 277.20</strong>
-              </div>
+              ))}
             </div>
-          </div>
+          )}
         </section>
       </div>
     </div>

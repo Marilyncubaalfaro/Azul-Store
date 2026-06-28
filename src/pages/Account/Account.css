@@ -145,6 +145,18 @@
   gap: 15px;
 }
 
+.orders-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.orders-error {
+  margin: 0;
+  color: #b12f22;
+  font-size: 13px;
+}
+
 .order-card {
   border: 1px solid #ddd;
   padding: 20px;
