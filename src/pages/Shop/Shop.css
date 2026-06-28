@@ -119,6 +119,11 @@
   cursor: pointer;
 }
 
+.shop-ropa-nav button.active {
+  color: #b12f22;
+  font-weight: 600;
+}
+
 .shop-ropa-featured {
   min-width: 0;
 }
@@ -145,6 +150,21 @@
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.shop-ropa-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 10px;
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  white-space: nowrap;
 }
 
 .shop-ropa-grid {
@@ -176,6 +196,12 @@
 }
 
 .shop-state-empty {
+  color: var(--muted);
+}
+
+.shop-ropa-empty-note {
+  margin: 0 0 14px;
+  font-size: 12px;
   color: var(--muted);
 }
 
