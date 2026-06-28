@@ -5,6 +5,7 @@ import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import Account from "./pages/Account";
 import Login from "./pages/Login";
+import ProductDetail from "./pages/ProductDetail";
 import RequireAuth from "./components/AuthGuard";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/shop/:category" element={<Shop />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route

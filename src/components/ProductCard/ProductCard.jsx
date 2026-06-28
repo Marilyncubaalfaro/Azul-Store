@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { formatPrice } from "../../utils/price";
 import "./ProductCard.css";
 
 export default function ProductCard({ product }) {
+  const navigate = useNavigate();
   const { addToCart } = useCart();
 
   const sizes = useMemo(() => {
@@ -41,7 +43,18 @@ export default function ProductCard({ product }) {
     : `Ultimas ${selectedSizeStock} unidades en talla ${selectedSize}`;
 
   return (
-    <article className="product-card">
+    <article
+      className="product-card"
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/product/${product.id}`)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigate(`/product/${product.id}`);
+        }
+      }}
+    >
       {product.badge && (
         <span className="badge">
           {product.badge.split("\n").map((text, index) => (
@@ -73,7 +86,10 @@ export default function ProductCard({ product }) {
               key={`${product.id}-${entry.size}`}
               type="button"
               className={`size-chip ${selectedSize === entry.size ? "active" : ""}`}
-              onClick={() => setSelectedSize(entry.size)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedSize(entry.size);
+              }}
               aria-pressed={selectedSize === entry.size}
             >
               {entry.size}
@@ -90,7 +106,10 @@ export default function ProductCard({ product }) {
         <button
           className="add-to-cart-btn"
           type="button"
-          onClick={() => addToCart(product, selectedSize)}
+          onClick={(event) => {
+            event.stopPropagation();
+            addToCart(product, selectedSize);
+          }}
           disabled={isOutOfStock}
         >
           {isOutOfStock ? "Agotado" : "Agregar al carrito"}

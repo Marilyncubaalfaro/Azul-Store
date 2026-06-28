@@ -48,10 +48,11 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("azul_store_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product, selectedSize) => {
+  const addToCart = (product, selectedSize, quantity = 1) => {
     setCartItems((prevItems) => {
       const size = (selectedSize || "UNICA").toUpperCase();
       const stockForSize = getStockForSize(product, size);
+      const unitsToAdd = Math.max(1, Number(quantity) || 1);
 
       if (stockForSize <= 0) {
         return prevItems;
@@ -61,16 +62,22 @@ export const CartProvider = ({ children }) => {
       const existingItem = prevItems.find((item) => item.cartKey === cartKey);
 
       if (existingItem) {
-        if (existingItem.quantity >= (existingItem.stockForSize ?? 0)) {
+        const maxStock = existingItem.stockForSize ?? 0;
+        if (existingItem.quantity >= maxStock) {
           return prevItems;
         }
 
+        const nextQuantity = Math.min(
+          existingItem.quantity + unitsToAdd,
+          maxStock,
+        );
+
         return prevItems.map((item) =>
-          item.cartKey === cartKey
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
+          item.cartKey === cartKey ? { ...item, quantity: nextQuantity } : item,
         );
       }
+
+      const initialQuantity = Math.min(unitsToAdd, stockForSize);
 
       return [
         ...prevItems,
@@ -79,7 +86,7 @@ export const CartProvider = ({ children }) => {
           selectedSize: size,
           cartKey,
           stockForSize,
-          quantity: 1,
+          quantity: initialQuantity,
         },
       ];
     });
