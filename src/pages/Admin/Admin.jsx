@@ -84,6 +84,8 @@ export default function Admin() {
   const [form, setForm] = useState(buildFormFromProduct(null, 1));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingMainImage, setIsUploadingMainImage] = useState(false);
+  const [uploadingExtraIndex, setUploadingExtraIndex] = useState(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [imageWarning, setImageWarning] = useState("");
@@ -178,13 +180,80 @@ export default function Admin() {
     }));
   };
 
-  const handleImageRowChange = (index, value) => {
-    setForm((current) => ({
-      ...current,
-      imageRows: current.imageRows.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, url: value } : row,
-      ),
-    }));
+  const uploadImageFile = async (file) => {
+    if (!accessToken) {
+      throw new Error("No hay sesión activa.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const uploadResponse = await requestJson("/media/upload-image", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    return uploadResponse?.secureUrl || uploadResponse?.url || "";
+  };
+
+  const handleMainImageFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    setImageWarning("");
+    setIsUploadingMainImage(true);
+
+    try {
+      const uploadedUrl = await uploadImageFile(file);
+      if (!uploadedUrl) {
+        throw new Error("No se obtuvo URL de Cloudinary.");
+      }
+
+      handleFieldChange("image", uploadedUrl);
+    } catch (requestError) {
+      setError(requestError.message || "No se pudo subir la imagen principal.");
+    } finally {
+      setIsUploadingMainImage(false);
+    }
+  };
+
+  const handleExtraImageFileChange = async (index, event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    setError("");
+    setImageWarning("");
+    setUploadingExtraIndex(index);
+
+    try {
+      const uploadedUrl = await uploadImageFile(file);
+      if (!uploadedUrl) {
+        throw new Error("No se obtuvo URL de Cloudinary.");
+      }
+
+      setForm((current) => ({
+        ...current,
+        imageRows: current.imageRows.map((row, rowIndex) =>
+          rowIndex === index ? { ...row, url: uploadedUrl } : row,
+        ),
+      }));
+    } catch (requestError) {
+      setError(requestError.message || "No se pudo subir la imagen extra.");
+    } finally {
+      setUploadingExtraIndex(null);
+    }
   };
 
   const addStockRow = () => {
@@ -597,15 +666,28 @@ export default function Admin() {
 
               <label>
                 Imagen principal
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={(event) =>
-                    handleFieldChange("image", event.target.value)
-                  }
-                  placeholder="https://..."
-                  required
-                />
+                <div className="admin-upload-row">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleMainImageFileChange}
+                  />
+                  <button
+                    type="button"
+                    className="admin-secondary-btn"
+                    onClick={() => handleFieldChange("image", "")}
+                    disabled={!form.image || isUploadingMainImage}
+                  >
+                    Limpiar
+                  </button>
+                </div>
+                <small className="admin-helper-text admin-helper-text-inline">
+                  {isUploadingMainImage
+                    ? "Subiendo imagen principal..."
+                    : form.image
+                      ? "Imagen principal cargada. Si no subes otra, se conserva esta."
+                      : "Sube una imagen principal para el producto."}
+                </small>
               </label>
 
               <div className="admin-grid admin-grid-2">
@@ -649,14 +731,22 @@ export default function Admin() {
               <div className="admin-image-list">
                 {form.imageRows.map((row, index) => (
                   <div className="admin-image-row" key={`image-${index}`}>
-                    <input
-                      type="url"
-                      value={row.url}
-                      onChange={(event) =>
-                        handleImageRowChange(index, event.target.value)
-                      }
-                      placeholder={`URL de imagen extra ${index + 1}`}
-                    />
+                    <div className="admin-image-upload-col">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                          handleExtraImageFileChange(index, event)
+                        }
+                      />
+                      <small className="admin-helper-text admin-helper-text-inline">
+                        {uploadingExtraIndex === index
+                          ? `Subiendo imagen extra ${index + 1}...`
+                          : row.url
+                            ? `Imagen extra ${index + 1} cargada.`
+                            : `Selecciona imagen extra ${index + 1}.`}
+                      </small>
+                    </div>
                     <button
                       type="button"
                       className="admin-remove-btn"
@@ -671,7 +761,8 @@ export default function Admin() {
 
               <p className="admin-helper-text">
                 La imagen principal ya cuenta como una. Puedes registrar hasta 4
-                extras.
+                extras. En edición, si no subes nuevas imágenes se conservan las
+                URLs existentes.
               </p>
               {duplicateImageCount > 0 && (
                 <p className="admin-warning">
