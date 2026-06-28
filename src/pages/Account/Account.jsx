@@ -20,6 +20,7 @@ export default function Account() {
   const [orders, setOrders] = useState([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
+  const isAdmin = user?.roles?.includes("admin");
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {
@@ -49,6 +50,13 @@ export default function Account() {
       setOrdersError("");
 
       try {
+        if (isAdmin) {
+          if (active) {
+            setOrders([]);
+          }
+          return;
+        }
+
         const data = await requestJson("/orders/me", {
           method: "GET",
           headers: {
@@ -78,7 +86,7 @@ export default function Account() {
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [accessToken, isAdmin]);
 
   const joinDate = useMemo(() => {
     if (!user?.createdAt) {
@@ -177,132 +185,138 @@ export default function Account() {
             </button>
           </div>
 
-          <div className="profile-address">
-            <h2>Direccion de envio</h2>
+          {!isAdmin && (
+            <div className="profile-address">
+              <h2>Direccion de envio</h2>
 
-            {isEditingAddress ? (
-              <form className="address-form" onSubmit={handleAddressSubmit}>
-                <label htmlFor="shipping-line1">Direccion</label>
-                <input
-                  id="shipping-line1"
-                  type="text"
-                  value={addressForm.line1}
-                  onChange={(event) =>
-                    handleAddressInputChange("line1", event.target.value)
-                  }
-                  required
-                  minLength={3}
-                />
+              {isEditingAddress ? (
+                <form className="address-form" onSubmit={handleAddressSubmit}>
+                  <label htmlFor="shipping-line1">Direccion</label>
+                  <input
+                    id="shipping-line1"
+                    type="text"
+                    value={addressForm.line1}
+                    onChange={(event) =>
+                      handleAddressInputChange("line1", event.target.value)
+                    }
+                    required
+                    minLength={3}
+                  />
 
-                <label htmlFor="shipping-city">Ciudad</label>
-                <input
-                  id="shipping-city"
-                  type="text"
-                  value={addressForm.city}
-                  onChange={(event) =>
-                    handleAddressInputChange("city", event.target.value)
-                  }
-                  required
-                  minLength={2}
-                />
+                  <label htmlFor="shipping-city">Ciudad</label>
+                  <input
+                    id="shipping-city"
+                    type="text"
+                    value={addressForm.city}
+                    onChange={(event) =>
+                      handleAddressInputChange("city", event.target.value)
+                    }
+                    required
+                    minLength={2}
+                  />
 
-                <label htmlFor="shipping-country">Pais</label>
-                <input
-                  id="shipping-country"
-                  type="text"
-                  value={addressForm.country}
-                  onChange={(event) =>
-                    handleAddressInputChange("country", event.target.value)
-                  }
-                  required
-                  minLength={2}
-                />
+                  <label htmlFor="shipping-country">Pais</label>
+                  <input
+                    id="shipping-country"
+                    type="text"
+                    value={addressForm.country}
+                    onChange={(event) =>
+                      handleAddressInputChange("country", event.target.value)
+                    }
+                    required
+                    minLength={2}
+                  />
 
-                {addressError && (
-                  <p className="address-error">{addressError}</p>
-                )}
+                  {addressError && (
+                    <p className="address-error">{addressError}</p>
+                  )}
 
-                <div className="address-form-actions">
+                  <div className="address-form-actions">
+                    <button
+                      className="profile-edit-btn"
+                      type="button"
+                      onClick={() => {
+                        setIsEditingAddress(false);
+                        setAddressError("");
+                        setAddressForm({
+                          line1: user?.address?.line1 || "",
+                          city: user?.address?.city || "",
+                          country: user?.address?.country || "",
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      className="add-to-cart-btn"
+                      type="submit"
+                      disabled={isSavingAddress}
+                    >
+                      {isSavingAddress ? "Guardando..." : "Guardar"}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <address>
+                    {user?.address?.line1 || "Direccion no configurada"}
+                    <br />
+                    {user?.address?.city || "Ciudad no configurada"}
+                    <br />
+                    {user?.address?.country || "Pais no configurado"}
+                  </address>
                   <button
                     className="profile-edit-btn"
-                    type="button"
-                    onClick={() => {
-                      setIsEditingAddress(false);
-                      setAddressError("");
-                      setAddressForm({
-                        line1: user?.address?.line1 || "",
-                        city: user?.address?.city || "",
-                        country: user?.address?.country || "",
-                      });
-                    }}
+                    onClick={() => setIsEditingAddress(true)}
                   >
-                    Cancelar
+                    Editar direccion
                   </button>
-                  <button
-                    className="add-to-cart-btn"
-                    type="submit"
-                    disabled={isSavingAddress}
-                  >
-                    {isSavingAddress ? "Guardando..." : "Guardar"}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <address>
-                  {user?.address?.line1 || "Direccion no configurada"}
-                  <br />
-                  {user?.address?.city || "Ciudad no configurada"}
-                  <br />
-                  {user?.address?.country || "Pais no configurado"}
-                </address>
-                <button
-                  className="profile-edit-btn"
-                  onClick={() => setIsEditingAddress(true)}
-                >
-                  Editar direccion
-                </button>
-              </>
-            )}
-          </div>
-        </aside>
-
-        <section className="orders-section">
-          <h2>Historial de Pedidos</h2>
-
-          {isLoadingOrders ? (
-            <p className="orders-message">Cargando pedidos...</p>
-          ) : ordersError ? (
-            <p className="orders-error">{ordersError}</p>
-          ) : orders.length === 0 ? (
-            <p className="orders-message">Aun no tienes pedidos registrados.</p>
-          ) : (
-            <div className="orders-list">
-              {orders.map((order) => (
-                <div
-                  className="order-card"
-                  key={order._id || order.orderNumber}
-                >
-                  <div className="order-card-header">
-                    <span>
-                      Pedido <strong>{order.orderNumber}</strong>
-                    </span>
-                    <span className="order-status">
-                      {order.status || "En proceso"}
-                    </span>
-                  </div>
-                  <div className="order-card-body">
-                    <div>
-                      <p>Fecha: {formatOrderDate(order.createdAt)}</p>
-                      <p>Items: {formatItemsSummary(order.items)}</p>
-                    </div>
-                    <strong>{formatPrice(Number(order.total) || 0)}</strong>
-                  </div>
-                </div>
-              ))}
+                </>
+              )}
             </div>
           )}
-        </section>
+        </aside>
+
+        {!isAdmin && (
+          <section className="orders-section">
+            <h2>Historial de Pedidos</h2>
+
+            {isLoadingOrders ? (
+              <p className="orders-message">Cargando pedidos...</p>
+            ) : ordersError ? (
+              <p className="orders-error">{ordersError}</p>
+            ) : orders.length === 0 ? (
+              <p className="orders-message">
+                Aun no tienes pedidos registrados.
+              </p>
+            ) : (
+              <div className="orders-list">
+                {orders.map((order) => (
+                  <div
+                    className="order-card"
+                    key={order._id || order.orderNumber}
+                  >
+                    <div className="order-card-header">
+                      <span>
+                        Pedido <strong>{order.orderNumber}</strong>
+                      </span>
+                      <span className="order-status">
+                        {order.status || "En proceso"}
+                      </span>
+                    </div>
+                    <div className="order-card-body">
+                      <div>
+                        <p>Fecha: {formatOrderDate(order.createdAt)}</p>
+                        <p>Items: {formatItemsSummary(order.items)}</p>
+                      </div>
+                      <strong>{formatPrice(Number(order.total) || 0)}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

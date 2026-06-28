@@ -29,6 +29,16 @@ export function AuthProvider({ children }) {
     return data.user ?? null;
   }, []);
 
+  const register = useCallback(async (name, email, password) => {
+    const data = await requestJson("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    return data.user ?? null;
+  }, []);
+
   const refreshSession = useCallback(async () => {
     const data = await requestJson("/auth/refresh", { method: "POST" });
     setUser(data.user ?? null);
@@ -114,6 +124,7 @@ export function AuthProvider({ children }) {
       isAuthenticated,
       isCheckingSession,
       login,
+      register,
       logout,
       updateShippingAddress,
       refreshSession,
@@ -125,6 +136,7 @@ export function AuthProvider({ children }) {
       isAuthenticated,
       isCheckingSession,
       login,
+      register,
       logout,
       updateShippingAddress,
       refreshSession,

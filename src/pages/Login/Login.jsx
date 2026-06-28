@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
 import "./Login.css";
@@ -88,6 +88,10 @@ export default function Login() {
               {isSubmitting ? "Ingresando..." : "Entrar"}
             </button>
           </form>
+
+          <p className="login-register-link">
+            ¿Eres nuevo? <Link to="/register">Regístrate aquí</Link>
+          </p>
         </div>
       </section>
     </div>

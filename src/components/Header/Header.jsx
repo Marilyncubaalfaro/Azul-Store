@@ -53,18 +53,20 @@ export default function Header() {
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </Link>
-          <Link
-            className="icon-button cart-button-container"
-            to="/cart"
-            aria-label="Carrito"
-            onClick={closeMenu}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 7h12l-1 14H7L6 7Z"></path>
-              <path d="M9 7a3 3 0 0 1 6 0"></path>
-            </svg>
-            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-          </Link>
+          {!isAdmin && (
+            <Link
+              className="icon-button cart-button-container"
+              to="/cart"
+              aria-label="Carrito"
+              onClick={closeMenu}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 7h12l-1 14H7L6 7Z"></path>
+                <path d="M9 7a3 3 0 0 1 6 0"></path>
+              </svg>
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </Link>
+          )}
         </div>
       </div>
 

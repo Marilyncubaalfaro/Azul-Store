@@ -5,6 +5,7 @@ import Shop from "./pages/Shop";
 import Cart from "./pages/Cart";
 import Account from "./pages/Account";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
 import RequireAuth from "./components/AuthGuard";
@@ -18,6 +19,7 @@ function App() {
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route
           path="/account"
           element={

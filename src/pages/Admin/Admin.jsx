@@ -87,6 +87,18 @@ export default function Admin() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [imageWarning, setImageWarning] = useState("");
+  const [isRegisteringUser, setIsRegisteringUser] = useState(false);
+  const [userRegisterError, setUserRegisterError] = useState("");
+  const [userRegisterSuccess, setUserRegisterSuccess] = useState("");
+  const [userForm, setUserForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    roles: {
+      user: true,
+      admin: false,
+    },
+  });
 
   const nextProductId = useMemo(() => {
     if (products.length === 0) {
@@ -219,6 +231,77 @@ export default function Admin() {
     setSuccessMessage("");
     setError("");
     setImageWarning("");
+  };
+
+  const handleUserFieldChange = (field, value) => {
+    setUserForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleUserRoleChange = (role, checked) => {
+    setUserForm((current) => ({
+      ...current,
+      roles: {
+        ...current.roles,
+        [role]: checked,
+      },
+    }));
+  };
+
+  const resetUserForm = () => {
+    setUserForm({
+      name: "",
+      email: "",
+      password: "",
+      roles: {
+        user: true,
+        admin: false,
+      },
+    });
+    setUserRegisterError("");
+    setUserRegisterSuccess("");
+  };
+
+  const submitUserRegistration = async (event) => {
+    event.preventDefault();
+
+    if (!accessToken) {
+      setUserRegisterError("No hay sesión activa.");
+      return;
+    }
+
+    const roles = ["user"];
+    if (userForm.roles.admin) {
+      roles.push("admin");
+    }
+
+    setIsRegisteringUser(true);
+    setUserRegisterError("");
+    setUserRegisterSuccess("");
+
+    try {
+      await requestJson("/auth/admin/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          name: userForm.name.trim(),
+          email: userForm.email.trim(),
+          password: userForm.password,
+          roles,
+        }),
+      });
+
+      setUserRegisterSuccess("Usuario registrado correctamente.");
+      resetUserForm();
+    } catch (requestError) {
+      setUserRegisterError(
+        requestError.message || "No se pudo registrar el usuario.",
+      );
+    } finally {
+      setIsRegisteringUser(false);
+    }
   };
 
   const submitProduct = async (event) => {
@@ -682,6 +765,97 @@ export default function Admin() {
               {error && <p className="admin-error">{error}</p>}
             </div>
           </form>
+
+          <section className="admin-section admin-user-section">
+            <div className="admin-section-header">
+              <h2>Registrar usuarios</h2>
+              <span>Solo accesible para administradores</span>
+            </div>
+
+            <form className="admin-user-form" onSubmit={submitUserRegistration}>
+              <div className="admin-grid admin-grid-2">
+                <label>
+                  Nombre
+                  <input
+                    type="text"
+                    value={userForm.name}
+                    onChange={(event) =>
+                      handleUserFieldChange("name", event.target.value)
+                    }
+                    required
+                    minLength={2}
+                  />
+                </label>
+                <label>
+                  Correo
+                  <input
+                    type="email"
+                    value={userForm.email}
+                    onChange={(event) =>
+                      handleUserFieldChange("email", event.target.value)
+                    }
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="admin-grid admin-grid-2">
+                <label>
+                  Contraseña
+                  <input
+                    type="password"
+                    value={userForm.password}
+                    onChange={(event) =>
+                      handleUserFieldChange("password", event.target.value)
+                    }
+                    required
+                    minLength={8}
+                  />
+                </label>
+
+                <div className="admin-user-roles">
+                  <span>Roles</span>
+                  <label className="admin-checkbox admin-checkbox-inline">
+                    <input type="checkbox" checked disabled />
+                    Usuario básico
+                  </label>
+                  <label className="admin-checkbox admin-checkbox-inline">
+                    <input
+                      type="checkbox"
+                      checked={userForm.roles.admin}
+                      onChange={(event) =>
+                        handleUserRoleChange("admin", event.target.checked)
+                      }
+                    />
+                    Admin
+                  </label>
+                </div>
+              </div>
+
+              <div className="admin-actions">
+                <button
+                  type="submit"
+                  className="admin-primary-btn"
+                  disabled={isRegisteringUser}
+                >
+                  {isRegisteringUser ? "Registrando..." : "Registrar usuario"}
+                </button>
+                <button
+                  type="button"
+                  className="admin-secondary-btn"
+                  onClick={resetUserForm}
+                >
+                  Limpiar
+                </button>
+                {userRegisterSuccess && (
+                  <p className="admin-success">{userRegisterSuccess}</p>
+                )}
+                {userRegisterError && (
+                  <p className="admin-error">{userRegisterError}</p>
+                )}
+              </div>
+            </form>
+          </section>
         </div>
       </div>
     </section>
