@@ -210,21 +210,12 @@ export default function ProductDetail() {
           <ul className="product-detail-meta">
             <li>SKU: AZ-{String(product.id).padStart(4, "0")}</li>
             <li>Categoria: {String(product.category).toUpperCase()}</li>
-            <li>Disponibilidad total: {product.stock ?? 0} unidades</li>
+            <li>
+              Disponibilidad en talla {selectedSize}: {selectedSizeStock}{" "}
+              unidades
+            </li>
             {discount !== null && <li>Descuento actual: {discount}%</li>}
           </ul>
-
-          <div className="product-detail-selector">
-            <p>Colores</p>
-            <div
-              className="product-detail-colors"
-              aria-label="Colores disponibles"
-            >
-              <span className="color-dot color-dot-blue" />
-              <span className="color-dot color-dot-burgundy" />
-              <span className="color-dot color-dot-black" />
-            </div>
-          </div>
 
           <div className="product-detail-selector">
             <p>Talla</p>
