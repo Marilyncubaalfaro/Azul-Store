@@ -107,6 +107,9 @@ export default function Header() {
           >
             Nightwear
           </NavLink>
+          <a href="/#brands" onClick={closeMenu}>
+            Brands
+          </a>
           {isAdmin && (
             <NavLink
               to="/admin"
@@ -116,10 +119,6 @@ export default function Header() {
               Admin
             </NavLink>
           )}
-          {/* Scroll local o enlace a home + hash */}
-          <a href="/#brands" onClick={closeMenu}>
-            Brands
-          </a>
         </div>
       </nav>
     </header>
