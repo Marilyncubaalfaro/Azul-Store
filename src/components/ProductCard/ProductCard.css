@@ -27,7 +27,7 @@
   text-align: center;
 }
 
-.product-card div {
+.product-card > div {
   padding-top: 12px;
   display: flex;
   flex-direction: column;
@@ -59,9 +59,10 @@
 
 .size-selector {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   margin: 10px 0 8px;
+  overflow-x: auto;
 }
 
 .size-chip {
