@@ -6,6 +6,7 @@ import Cart from "./pages/Cart";
 import Account from "./pages/Account";
 import Login from "./pages/Login";
 import ProductDetail from "./pages/ProductDetail";
+import Admin from "./pages/Admin";
 import RequireAuth from "./components/AuthGuard";
 
 function App() {
@@ -22,6 +23,14 @@ function App() {
           element={
             <RequireAuth>
               <Account />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth allowedRoles={["admin"]}>
+              <Admin />
             </RequireAuth>
           }
         />

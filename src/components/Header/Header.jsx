@@ -7,7 +7,8 @@ import "./Header.css";
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { cartCount } = useCart();
-  const { isAuthenticated, isCheckingSession } = useAuth();
+  const { user, isAuthenticated, isCheckingSession } = useAuth();
+  const isAdmin = user?.roles?.includes("admin");
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -106,6 +107,15 @@ export default function Header() {
           >
             Nightwear
           </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => (isActive ? "active" : "")}
+              onClick={closeMenu}
+            >
+              Admin
+            </NavLink>
+          )}
           {/* Scroll local o enlace a home + hash */}
           <a href="/#brands" onClick={closeMenu}>
             Brands
