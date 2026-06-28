@@ -1,52 +1,111 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from "react";
 
 const CartContext = createContext();
 
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart debe ser usado dentro de un CartProvider');
+    throw new Error("useCart debe ser usado dentro de un CartProvider");
   }
   return context;
 };
 
 export const CartProvider = ({ children }) => {
+  const normalizeSizeStock = (product) => {
+    if (Array.isArray(product.stockBySize) && product.stockBySize.length > 0) {
+      return product.stockBySize.map((entry) => ({
+        size: String(entry.size).toUpperCase(),
+        stock: Number(entry.stock) || 0,
+      }));
+    }
+
+    return [{ size: "UNICA", stock: Number(product.stock) || 0 }];
+  };
+
+  const getStockForSize = (product, selectedSize) => {
+    const stockBySize = normalizeSizeStock(product);
+    return stockBySize.find((entry) => entry.size === selectedSize)?.stock ?? 0;
+  };
+
   const [cartItems, setCartItems] = useState(() => {
-    const localData = localStorage.getItem('azul_store_cart');
-    return localData ? JSON.parse(localData) : [];
+    const localData = localStorage.getItem("azul_store_cart");
+    const parsed = localData ? JSON.parse(localData) : [];
+
+    return parsed.map((item) => {
+      const selectedSize = item.selectedSize || "UNICA";
+      const cartKey = item.cartKey || `${item.id}:${selectedSize}`;
+
+      return {
+        ...item,
+        selectedSize,
+        cartKey,
+        stockForSize: Number(item.stockForSize) || 0,
+      };
+    });
   });
 
   useEffect(() => {
-    localStorage.setItem('azul_store_cart', JSON.stringify(cartItems));
+    localStorage.setItem("azul_store_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  const addToCart = (product) => {
+  const addToCart = (product, selectedSize) => {
     setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
+      const size = (selectedSize || "UNICA").toUpperCase();
+      const stockForSize = getStockForSize(product, size);
+
+      if (stockForSize <= 0) {
+        return prevItems;
+      }
+
+      const cartKey = `${product.id}:${size}`;
+      const existingItem = prevItems.find((item) => item.cartKey === cartKey);
+
       if (existingItem) {
+        if (existingItem.quantity >= (existingItem.stockForSize ?? 0)) {
+          return prevItems;
+        }
+
         return prevItems.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.cartKey === cartKey
+            ? { ...item, quantity: item.quantity + 1 }
+            : item,
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+
+      return [
+        ...prevItems,
+        {
+          ...product,
+          selectedSize: size,
+          cartKey,
+          stockForSize,
+          quantity: 1,
+        },
+      ];
     });
   };
 
-  const removeFromCart = (productId) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== productId));
+  const removeFromCart = (cartKey) => {
+    setCartItems((prevItems) =>
+      prevItems.filter((item) => item.cartKey !== cartKey),
+    );
   };
 
-  const updateQuantity = (productId, amount) => {
+  const updateQuantity = (cartKey, amount) => {
     setCartItems((prevItems) =>
       prevItems
         .map((item) => {
-          if (item.id === productId) {
+          if (item.cartKey === cartKey) {
+            if (amount > 0 && item.quantity >= (item.stockForSize ?? 0)) {
+              return item;
+            }
+
             const newQty = item.quantity + amount;
             return { ...item, quantity: newQty };
           }
           return item;
         })
-        .filter((item) => item.quantity > 0)
+        .filter((item) => item.quantity > 0),
     );
   };
 
@@ -56,7 +115,10 @@ export const CartProvider = ({ children }) => {
 
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
-  const cartTotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const cartTotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0,
+  );
 
   return (
     <CartContext.Provider

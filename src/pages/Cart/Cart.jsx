@@ -58,7 +58,7 @@ export default function Cart() {
           >
             {cartItems.map((item) => (
               <div
-                key={item.id}
+                key={item.cartKey}
                 className="cart-item"
                 style={{
                   display: "flex",
@@ -91,15 +91,33 @@ export default function Cart() {
                   >
                     {item.name}
                   </h3>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "12px",
+                      color: "var(--muted)",
+                    }}
+                  >
+                    Talla: {item.selectedSize || "UNICA"}
+                  </p>
                   <p style={{ margin: 0, fontSize: "13px" }}>
                     <strong>{formatPrice(item.price)}</strong>
+                  </p>
+                  <p
+                    style={{
+                      margin: "6px 0 0",
+                      fontSize: "12px",
+                      color: "var(--muted)",
+                    }}
+                  >
+                    Disponible en talla: {item.stockForSize ?? 0}
                   </p>
                 </div>
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "10px" }}
                 >
                   <button
-                    onClick={() => updateQuantity(item.id, -1)}
+                    onClick={() => updateQuantity(item.cartKey, -1)}
                     style={{
                       border: "1px solid #141414",
                       background: "transparent",
@@ -113,7 +131,8 @@ export default function Cart() {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => updateQuantity(item.id, 1)}
+                    onClick={() => updateQuantity(item.cartKey, 1)}
+                    disabled={item.quantity >= (item.stockForSize ?? 0)}
                     style={{
                       border: "1px solid #141414",
                       background: "transparent",
@@ -125,7 +144,7 @@ export default function Cart() {
                   </button>
                 </div>
                 <button
-                  onClick={() => removeFromCart(item.id)}
+                  onClick={() => removeFromCart(item.cartKey)}
                   style={{
                     background: "transparent",
                     border: 0,

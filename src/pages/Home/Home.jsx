@@ -1,11 +1,12 @@
 import React from "react";
-import { PRODUCTS, BRANDS } from "../../data/products";
 import ProductCard from "../../components/ProductCard";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
+import { useHomeData } from "../../hooks/useHomeData";
 import "./Home.css";
 
 export default function Home() {
   useScrollOnRouteChange();
+  const { products, brands, isLoading, error } = useHomeData();
 
   return (
     <>
@@ -32,7 +33,7 @@ export default function Home() {
       <section className="brands" id="brands">
         <h2>Our Brands</h2>
         <div className="brand-strip" aria-label="Marcas">
-          {BRANDS.map((brand, idx) => (
+          {brands.map((brand, idx) => (
             <span key={idx}>{brand}</span>
           ))}
         </div>
@@ -43,9 +44,13 @@ export default function Home() {
         id="fiestas"
         aria-label="Productos destacados"
       >
-        {PRODUCTS.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        {isLoading && <p>Cargando productos...</p>}
+        {!isLoading && error && <p>{error}</p>}
+        {!isLoading &&
+          !error &&
+          products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
       </section>
 
       <section className="stores">

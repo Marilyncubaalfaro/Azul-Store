@@ -10,7 +10,8 @@ export default function Shop() {
 
   useScrollOnRouteChange();
 
-  const { filteredProducts, categoryTitle } = useShopData(category);
+  const { filteredProducts, categoryTitle, isLoading, error } =
+    useShopData(category);
 
   return (
     <div className="shop-page" style={{ padding: "40px 20px" }}>
@@ -35,7 +36,27 @@ export default function Shop() {
         </p>
       </header>
 
-      {filteredProducts.length > 0 ? (
+      {isLoading ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            color: "var(--muted)",
+          }}
+        >
+          <p>Cargando productos...</p>
+        </div>
+      ) : error ? (
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 20px",
+            color: "#b12f22",
+          }}
+        >
+          <p>{error}</p>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <section className="products" style={{ padding: "0 40px 40px" }}>
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
