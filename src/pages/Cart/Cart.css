@@ -157,6 +157,12 @@
   font-size: 13px;
 }
 
+.cart-checkout-error {
+  margin: 10px 0 0;
+  color: #b12f22;
+  font-size: 12px;
+}
+
 /* ===== Responsive Cart ===== */
 @media (max-width: 820px) {
   .cart-page {

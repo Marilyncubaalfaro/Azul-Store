@@ -1,15 +1,60 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { formatPrice } from "../../utils/price";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
+import { useAuth } from "../../context/AuthContext";
+import { requestJson } from "../../utils/api";
 import "./Cart.css";
 
 export default function Cart() {
+  const navigate = useNavigate();
   const { cartItems, removeFromCart, updateQuantity, clearCart, cartTotal } =
     useCart();
+  const { accessToken, isAuthenticated } = useAuth();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   useScrollOnRouteChange();
+
+  const handleCheckout = async () => {
+    setCheckoutError("");
+
+    if (!isAuthenticated || !accessToken) {
+      navigate("/login");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      return;
+    }
+
+    setIsCheckingOut(true);
+
+    try {
+      await requestJson("/orders/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          items: cartItems.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            size: item.selectedSize || "UNICA",
+          })),
+        }),
+      });
+
+      clearCart();
+      navigate("/account");
+    } catch (error) {
+      setCheckoutError(error.message || "No se pudo completar el pago.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   return (
     <div className="cart-page" style={{ padding: "40px 45px 80px" }}>
@@ -236,12 +281,14 @@ export default function Cart() {
             <button
               className="add-to-cart-btn"
               style={{ width: "100%", padding: "12px", fontSize: "13px" }}
-              onClick={() =>
-                alert("¡Gracias por tu compra simulada en Azul Store!")
-              }
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
             >
-              Proceder al Pago
+              {isCheckingOut ? "Procesando pago..." : "Proceder al Pago"}
             </button>
+            {checkoutError && (
+              <p className="cart-checkout-error">{checkoutError}</p>
+            )}
           </div>
         </div>
       )}
