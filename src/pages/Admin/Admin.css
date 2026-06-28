@@ -222,6 +222,21 @@
   gap: 10px;
 }
 
+.admin-upload-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.admin-image-upload-col {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-helper-text-inline {
+  margin: 0;
+}
+
 .admin-stock-row {
   display: grid;
   grid-template-columns: 1fr 120px auto;
