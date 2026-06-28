@@ -1,17 +1,33 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useScrollOnRouteChange } from "../../hooks/useScrollOnRouteChange";
 import { useAuth } from "../../context/AuthContext";
 import "./Account.css";
 
 export default function Account() {
   useScrollOnRouteChange();
-  const { user, logout, fetchCurrentUser } = useAuth();
+  const { user, logout, fetchCurrentUser, updateShippingAddress } = useAuth();
+  const [addressForm, setAddressForm] = useState({
+    line1: "",
+    city: "",
+    country: "",
+  });
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [addressError, setAddressError] = useState("");
 
   useEffect(() => {
     fetchCurrentUser().catch(() => {
       // Si falla, seguimos mostrando los datos cacheados del contexto.
     });
   }, [fetchCurrentUser]);
+
+  useEffect(() => {
+    setAddressForm({
+      line1: user?.address?.line1 || "",
+      city: user?.address?.city || "",
+      country: user?.address?.country || "",
+    });
+  }, [user]);
 
   const joinDate = useMemo(() => {
     if (!user?.createdAt) {
@@ -29,6 +45,31 @@ export default function Account() {
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleAddressInputChange = (field, value) => {
+    setAddressForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddressSubmit = async (event) => {
+    event.preventDefault();
+    setAddressError("");
+    setIsSavingAddress(true);
+
+    try {
+      await updateShippingAddress({
+        line1: addressForm.line1,
+        city: addressForm.city,
+        country: addressForm.country,
+      });
+      setIsEditingAddress(false);
+    } catch (error) {
+      setAddressError(
+        error.message || "No se pudo guardar la direccion de envio.",
+      );
+    } finally {
+      setIsSavingAddress(false);
+    }
   };
 
   return (
@@ -61,19 +102,91 @@ export default function Account() {
 
           <div className="profile-address">
             <h2>Direccion de envio</h2>
-            <address>
-              Av. Larco 123, Dpto 402
-              <br />
-              Miraflores, Lima
-              <br />
-              Peru
-            </address>
-            <button
-              className="profile-edit-btn"
-              onClick={() => alert("Editar direccion")}
-            >
-              Editar direccion
-            </button>
+
+            {isEditingAddress ? (
+              <form className="address-form" onSubmit={handleAddressSubmit}>
+                <label htmlFor="shipping-line1">Direccion</label>
+                <input
+                  id="shipping-line1"
+                  type="text"
+                  value={addressForm.line1}
+                  onChange={(event) =>
+                    handleAddressInputChange("line1", event.target.value)
+                  }
+                  required
+                  minLength={3}
+                />
+
+                <label htmlFor="shipping-city">Ciudad</label>
+                <input
+                  id="shipping-city"
+                  type="text"
+                  value={addressForm.city}
+                  onChange={(event) =>
+                    handleAddressInputChange("city", event.target.value)
+                  }
+                  required
+                  minLength={2}
+                />
+
+                <label htmlFor="shipping-country">Pais</label>
+                <input
+                  id="shipping-country"
+                  type="text"
+                  value={addressForm.country}
+                  onChange={(event) =>
+                    handleAddressInputChange("country", event.target.value)
+                  }
+                  required
+                  minLength={2}
+                />
+
+                {addressError && (
+                  <p className="address-error">{addressError}</p>
+                )}
+
+                <div className="address-form-actions">
+                  <button
+                    className="profile-edit-btn"
+                    type="button"
+                    onClick={() => {
+                      setIsEditingAddress(false);
+                      setAddressError("");
+                      setAddressForm({
+                        line1: user?.address?.line1 || "",
+                        city: user?.address?.city || "",
+                        country: user?.address?.country || "",
+                      });
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="add-to-cart-btn"
+                    type="submit"
+                    disabled={isSavingAddress}
+                  >
+                    {isSavingAddress ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <address>
+                  {user?.address?.line1 || "Direccion no configurada"}
+                  <br />
+                  {user?.address?.city || "Ciudad no configurada"}
+                  <br />
+                  {user?.address?.country || "Pais no configurado"}
+                </address>
+                <button
+                  className="profile-edit-btn"
+                  onClick={() => setIsEditingAddress(true)}
+                >
+                  Editar direccion
+                </button>
+              </>
+            )}
           </div>
         </aside>
 

@@ -77,6 +77,49 @@
   line-height: 1.6;
 }
 
+.address-form {
+  display: grid;
+  gap: 10px;
+}
+
+.address-form label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.address-form input {
+  border: 1px solid #141414;
+  background: #fff;
+  min-height: 40px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.address-form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.address-form-actions .profile-edit-btn,
+.address-form-actions .add-to-cart-btn {
+  margin-top: 0;
+  min-height: 40px;
+  padding: 10px 12px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.address-error {
+  margin: 0;
+  color: #b12f22;
+  font-size: 12px;
+}
+
 .profile-edit-btn {
   margin-top: 15px;
   background: transparent;

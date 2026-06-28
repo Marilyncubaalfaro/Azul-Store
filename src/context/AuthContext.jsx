@@ -61,6 +61,27 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateShippingAddress = useCallback(
+    async ({ line1, city, country }) => {
+      if (!accessToken) {
+        throw new Error("No hay sesion activa.");
+      }
+
+      const data = await requestJson("/auth/me/address", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ line1, city, country }),
+      });
+
+      setUser(data ?? null);
+      return data ?? null;
+    },
+    [accessToken],
+  );
+
   useEffect(() => {
     let isMounted = true;
 
@@ -94,6 +115,7 @@ export function AuthProvider({ children }) {
       isCheckingSession,
       login,
       logout,
+      updateShippingAddress,
       refreshSession,
       fetchCurrentUser,
     }),
@@ -104,6 +126,7 @@ export function AuthProvider({ children }) {
       isCheckingSession,
       login,
       logout,
+      updateShippingAddress,
       refreshSession,
       fetchCurrentUser,
     ],
