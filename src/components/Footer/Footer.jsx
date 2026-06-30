@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import './Footer.css';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import "./Footer.css";
 
 export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (email.trim()) {
-      setMessage('Gracias por suscribirte a Azul Store.');
-      setEmail('');
+      setMessage("Gracias por suscribirte a Azul Store.");
+      setEmail("");
     } else {
-      setMessage('');
+      setMessage("");
     }
   };
 
@@ -20,24 +20,24 @@ export default function Footer() {
     <footer className="site-footer">
       <div>
         <h2>Azul Store</h2>
-        <a href="#sobre-nosotros">sobre nosotros</a>
-        <a href="#nuestras-tiendas">Nuestras tiendas</a>
-        <a href="#contacto">Contacto</a>
+        <Link to="/sobre-nosotros">Sobre nosotros</Link>
+        <Link to="/nuestras-tiendas">Nuestras tiendas</Link>
+        <Link to="/contacto">Contacto</Link>
       </div>
       <div>
         <h2>Shop</h2>
         <Link to="/shop/ropa">Ropa</Link>
         <Link to="/shop/beachwear">Beachwear</Link>
         <Link to="/shop/nightwear">Nightwear</Link>
-        <a href="#accesorios">Accesorios</a>
+        <Link to="/accesorios">Accesorios</Link>
         <a href="/#brands">Brands</a>
       </div>
       <div>
         <h2>Centro de Ayuda</h2>
-        <a href="#terminos">Terminos y condiciones</a>
-        <a href="#privacidad">Politicas de privacidad</a>
-        <a href="#envio">Politicas de envio</a>
-        <a href="#reclamaciones">Libro de reclamaciones</a>
+        <Link to="/terminos">Términos y condiciones</Link>
+        <Link to="/privacidad">Políticas de privacidad</Link>
+        <Link to="/envio">Políticas de envío</Link>
+        <Link to="/reclamaciones">Libro de reclamaciones</Link>
       </div>
       <form className="newsletter" onSubmit={handleSubscribe}>
         <h2>Suscribete a nuestra revista y se parte de Azul store.</h2>
@@ -53,7 +53,11 @@ export default function Footer() {
           />
         </label>
         <button type="submit">Suscribirse</button>
-        {message && <p className="form-message" role="status">{message}</p>}
+        {message && (
+          <p className="form-message" role="status">
+            {message}
+          </p>
+        )}
       </form>
     </footer>
   );
