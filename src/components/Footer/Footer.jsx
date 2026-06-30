@@ -1,18 +1,37 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { requestJson } from "../../utils/api";
 import "./Footer.css";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubscribe = (e) => {
+  const handleSubscribe = async (e) => {
     e.preventDefault();
-    if (email.trim()) {
-      setMessage("Gracias por suscribirte a Azul Store.");
+
+    if (!email.trim() || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await requestJson("/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      setMessage(response?.message || "Gracias por suscribirte a Azul Store.");
       setEmail("");
-    } else {
-      setMessage("");
+    } catch (error) {
+      setMessage(error.message || "No se pudo procesar la suscripción.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -52,7 +71,9 @@ export default function Footer() {
             required
           />
         </label>
-        <button type="submit">Suscribirse</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Enviando..." : "Suscribirse"}
+        </button>
         {message && (
           <p className="form-message" role="status">
             {message}
