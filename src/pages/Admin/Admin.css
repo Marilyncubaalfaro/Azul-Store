@@ -311,6 +311,15 @@
   gap: 14px;
 }
 
+.admin-newsletter-subscribers {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-newsletter-subscribers .admin-helper-text {
+  margin: 0;
+}
+
 .admin-user-roles {
   display: grid;
   gap: 8px;

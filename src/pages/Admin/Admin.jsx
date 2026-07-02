@@ -100,6 +100,16 @@ export default function Admin() {
   const [isRegisteringUser, setIsRegisteringUser] = useState(false);
   const [userRegisterError, setUserRegisterError] = useState("");
   const [userRegisterSuccess, setUserRegisterSuccess] = useState("");
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
+  const [newsletterForm, setNewsletterForm] = useState({
+    subject: "",
+    message: "",
+  });
+  const [isSendingNewsletter, setIsSendingNewsletter] = useState(false);
+  const [newsletterError, setNewsletterError] = useState("");
+  const [newsletterSuccess, setNewsletterSuccess] = useState("");
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
@@ -165,6 +175,54 @@ export default function Admin() {
     };
 
     loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin || !accessToken) {
+      return;
+    }
+
+    let active = true;
+
+    const loadSubscribers = async () => {
+      setIsLoadingSubscribers(true);
+      setNewsletterError("");
+
+      try {
+        const response = await requestJson("/newsletter/admin/subscribers", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!active) {
+          return;
+        }
+
+        setSubscribers(
+          Array.isArray(response?.subscribers) ? response.subscribers : [],
+        );
+        setSubscriberCount(Number(response?.count) || 0);
+      } catch (requestError) {
+        if (!active) {
+          return;
+        }
+
+        setNewsletterError(
+          requestError.message || "No se pudieron cargar los suscriptores.",
+        );
+      } finally {
+        if (active) {
+          setIsLoadingSubscribers(false);
+        }
+      }
+    };
+
+    loadSubscribers();
 
     return () => {
       active = false;
@@ -388,6 +446,52 @@ export default function Admin() {
       );
     } finally {
       setIsRegisteringUser(false);
+    }
+  };
+
+  const handleNewsletterFieldChange = (field, value) => {
+    setNewsletterForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const submitNewsletterCampaign = async (event) => {
+    event.preventDefault();
+
+    if (!accessToken) {
+      setNewsletterError("No hay sesión activa.");
+      return;
+    }
+
+    setIsSendingNewsletter(true);
+    setNewsletterError("");
+    setNewsletterSuccess("");
+
+    try {
+      const response = await requestJson("/newsletter/admin/send-campaign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          subject: newsletterForm.subject.trim(),
+          message: newsletterForm.message.trim(),
+        }),
+      });
+
+      setNewsletterSuccess(
+        response?.message || "Campaña enviada correctamente.",
+      );
+      setNewsletterForm((current) => ({
+        ...current,
+        subject: "",
+        message: "",
+      }));
+    } catch (requestError) {
+      setNewsletterError(
+        requestError.message || "No se pudo enviar la campaña.",
+      );
+    } finally {
+      setIsSendingNewsletter(false);
     }
   };
 
@@ -1000,6 +1104,82 @@ export default function Admin() {
                 )}
               </div>
             </form>
+          </section>
+
+          <section className="admin-section admin-user-section">
+            <div className="admin-section-header">
+              <h2>Newsletter</h2>
+              <span>{subscriberCount} suscriptor(es)</span>
+            </div>
+
+            <div className="admin-user-form">
+              {isLoadingSubscribers ? (
+                <p className="admin-helper-text">Cargando suscriptores...</p>
+              ) : subscribers.length > 0 ? (
+                <div className="admin-user-roles">
+                  <span>Últimos suscriptores</span>
+                  {subscribers.slice(0, 8).map((subscriber) => (
+                    <p key={subscriber.email} className="admin-helper-text">
+                      {subscriber.email}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="admin-helper-text">
+                  Aún no hay correos registrados.
+                </p>
+              )}
+
+              <form
+                className="admin-user-form"
+                onSubmit={submitNewsletterCampaign}
+              >
+                <label>
+                  Asunto
+                  <input
+                    type="text"
+                    value={newsletterForm.subject}
+                    onChange={(event) =>
+                      handleNewsletterFieldChange("subject", event.target.value)
+                    }
+                    required
+                    minLength={3}
+                    maxLength={120}
+                  />
+                </label>
+
+                <label>
+                  Mensaje
+                  <textarea
+                    rows="6"
+                    value={newsletterForm.message}
+                    onChange={(event) =>
+                      handleNewsletterFieldChange("message", event.target.value)
+                    }
+                    required
+                    minLength={10}
+                    maxLength={10000}
+                    placeholder="Escribe aquí el contenido de tu campaña..."
+                  />
+                </label>
+
+                <div className="admin-actions">
+                  <button
+                    type="submit"
+                    className="admin-primary-btn"
+                    disabled={isSendingNewsletter || subscriberCount === 0}
+                  >
+                    {isSendingNewsletter ? "Enviando..." : "Enviar campaña"}
+                  </button>
+                  {newsletterSuccess && (
+                    <p className="admin-success">{newsletterSuccess}</p>
+                  )}
+                  {newsletterError && (
+                    <p className="admin-error">{newsletterError}</p>
+                  )}
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       </div>

@@ -3,19 +3,37 @@ import { Link } from "react-router-dom";
 import { requestJson } from "../../utils/api";
 import "./Footer.css";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Footer() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("info");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
 
-    if (!email.trim() || isSubmitting) {
+    const trimmedEmail = email.trim();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!trimmedEmail) {
+      setMessageType("error");
+      setMessage("Ingresa un correo electronico para suscribirte.");
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setMessageType("error");
+      setMessage("Ingresa un correo electronico valido.");
       return;
     }
 
     setIsSubmitting(true);
+    setMessage("");
 
     try {
       const response = await requestJson("/newsletter/subscribe", {
@@ -23,15 +41,25 @@ export default function Footer() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: trimmedEmail }),
       });
 
+      setMessageType("success");
       setMessage(response?.message || "Gracias por suscribirte a Azul Store.");
       setEmail("");
     } catch (error) {
+      setMessageType("error");
       setMessage(error.message || "No se pudo procesar la suscripción.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+
+    if (message) {
+      setMessage("");
     }
   };
 
@@ -67,15 +95,19 @@ export default function Footer() {
             type="email"
             placeholder="Correo electronico"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
+            autoComplete="email"
             required
           />
         </label>
-        <button type="submit" disabled={isSubmitting}>
+        <button type="submit" disabled={isSubmitting || !email.trim()}>
           {isSubmitting ? "Enviando..." : "Suscribirse"}
         </button>
         {message && (
-          <p className="form-message" role="status">
+          <p
+            className={`form-message ${messageType === "error" ? "form-message--error" : "form-message--success"}`}
+            role="status"
+          >
             {message}
           </p>
         )}
