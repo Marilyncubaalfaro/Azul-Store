@@ -77,6 +77,42 @@
   font-size: 14px;
 }
 
+.login-form .password-field {
+  position: relative;
+}
+
+.login-form .password-field input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.login-form .password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: #333;
+  cursor: pointer;
+}
+
+.login-form .password-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.login-form .password-toggle-btn:focus-visible {
+  outline: 2px solid #141414;
+  outline-offset: 2px;
+}
+
 .login-error {
   margin: 6px 0;
   color: #b12f22;

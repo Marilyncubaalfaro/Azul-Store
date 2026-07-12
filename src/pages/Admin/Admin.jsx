@@ -10,7 +10,7 @@ const emptyStockRows = () => [
   { size: "XL", stock: 0 },
 ];
 
-const emptyImageRows = () => [{ url: "" }];
+const emptyImageRows = () => [{ url: "", file: null, previewUrl: "" }];
 
 const MAX_TOTAL_IMAGES = 5;
 const MAX_EXTRA_IMAGES = MAX_TOTAL_IMAGES - 1;
@@ -30,7 +30,15 @@ function buildImageRows(product) {
     return emptyImageRows();
   }
 
-  return extraImages.slice(0, MAX_EXTRA_IMAGES).map((url) => ({ url }));
+  return extraImages
+    .slice(0, MAX_EXTRA_IMAGES)
+    .map((url) => ({ url, file: null, previewUrl: "" }));
+}
+
+function revokeObjectUrl(url) {
+  if (typeof url === "string" && url.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
 }
 
 function buildFormFromProduct(product, nextId) {
@@ -84,12 +92,24 @@ export default function Admin() {
   const [form, setForm] = useState(buildFormFromProduct(null, 1));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [mainImageFile, setMainImageFile] = useState(null);
+  const [mainImagePreviewUrl, setMainImagePreviewUrl] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [imageWarning, setImageWarning] = useState("");
   const [isRegisteringUser, setIsRegisteringUser] = useState(false);
   const [userRegisterError, setUserRegisterError] = useState("");
   const [userRegisterSuccess, setUserRegisterSuccess] = useState("");
+  const [subscribers, setSubscribers] = useState([]);
+  const [subscriberCount, setSubscriberCount] = useState(0);
+  const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
+  const [newsletterForm, setNewsletterForm] = useState({
+    subject: "",
+    message: "",
+  });
+  const [isSendingNewsletter, setIsSendingNewsletter] = useState(false);
+  const [newsletterError, setNewsletterError] = useState("");
+  const [newsletterSuccess, setNewsletterSuccess] = useState("");
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
@@ -162,7 +182,60 @@ export default function Admin() {
   }, [accessToken, isAdmin]);
 
   useEffect(() => {
+    if (!isAdmin || !accessToken) {
+      return;
+    }
+
+    let active = true;
+
+    const loadSubscribers = async () => {
+      setIsLoadingSubscribers(true);
+      setNewsletterError("");
+
+      try {
+        const response = await requestJson("/newsletter/admin/subscribers", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!active) {
+          return;
+        }
+
+        setSubscribers(
+          Array.isArray(response?.subscribers) ? response.subscribers : [],
+        );
+        setSubscriberCount(Number(response?.count) || 0);
+      } catch (requestError) {
+        if (!active) {
+          return;
+        }
+
+        setNewsletterError(
+          requestError.message || "No se pudieron cargar los suscriptores.",
+        );
+      } finally {
+        if (active) {
+          setIsLoadingSubscribers(false);
+        }
+      }
+    };
+
+    loadSubscribers();
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, isAdmin]);
+
+  useEffect(() => {
     setForm(buildFormFromProduct(selectedProduct, nextProductId));
+    setMainImageFile(null);
+    setMainImagePreviewUrl((current) => {
+      revokeObjectUrl(current);
+      return "";
+    });
   }, [nextProductId, selectedProduct]);
 
   const handleFieldChange = (field, value) => {
@@ -178,12 +251,69 @@ export default function Admin() {
     }));
   };
 
-  const handleImageRowChange = (index, value) => {
+  const uploadImageFile = async (file) => {
+    if (!accessToken) {
+      throw new Error("No hay sesión activa.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const uploadResponse = await requestJson("/media/upload-image", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: formData,
+    });
+
+    return uploadResponse?.secureUrl || uploadResponse?.url || "";
+  };
+
+  const handleMainImageFileChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const nextPreview = URL.createObjectURL(file);
+    setError("");
+    setImageWarning("");
+    setMainImageFile(file);
+    setMainImagePreviewUrl((current) => {
+      revokeObjectUrl(current);
+      return nextPreview;
+    });
+  };
+
+  const handleExtraImageFileChange = (index, event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    const nextPreview = URL.createObjectURL(file);
+    setError("");
+    setImageWarning("");
+
     setForm((current) => ({
       ...current,
-      imageRows: current.imageRows.map((row, rowIndex) =>
-        rowIndex === index ? { ...row, url: value } : row,
-      ),
+      imageRows: current.imageRows.map((row, rowIndex) => {
+        if (rowIndex !== index) {
+          return row;
+        }
+
+        revokeObjectUrl(row.previewUrl);
+        return {
+          ...row,
+          file,
+          previewUrl: nextPreview,
+        };
+      }),
     }));
   };
 
@@ -200,7 +330,7 @@ export default function Admin() {
       imageRows:
         current.imageRows.length >= MAX_EXTRA_IMAGES
           ? current.imageRows
-          : [...current.imageRows, { url: "" }],
+          : [...current.imageRows, { url: "", file: null, previewUrl: "" }],
     }));
   };
 
@@ -212,22 +342,37 @@ export default function Admin() {
   };
 
   const removeImageRow = (index) => {
-    setForm((current) => ({
-      ...current,
-      imageRows: current.imageRows.filter((_, rowIndex) => rowIndex !== index),
-    }));
+    setForm((current) => {
+      const rowToDelete = current.imageRows[index];
+      revokeObjectUrl(rowToDelete?.previewUrl);
+
+      return {
+        ...current,
+        imageRows: current.imageRows.filter(
+          (_, rowIndex) => rowIndex !== index,
+        ),
+      };
+    });
   };
 
   const resetToNewProduct = () => {
+    revokeObjectUrl(mainImagePreviewUrl);
+    form.imageRows.forEach((row) => revokeObjectUrl(row.previewUrl));
     setSelectedProductId(null);
     setForm(buildFormFromProduct(null, nextProductId));
+    setMainImageFile(null);
+    setMainImagePreviewUrl("");
     setSuccessMessage("");
     setError("");
     setImageWarning("");
   };
 
   const selectProduct = (product) => {
+    revokeObjectUrl(mainImagePreviewUrl);
+    form.imageRows.forEach((row) => revokeObjectUrl(row.previewUrl));
     setSelectedProductId(product.id);
+    setMainImageFile(null);
+    setMainImagePreviewUrl("");
     setSuccessMessage("");
     setError("");
     setImageWarning("");
@@ -304,6 +449,52 @@ export default function Admin() {
     }
   };
 
+  const handleNewsletterFieldChange = (field, value) => {
+    setNewsletterForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const submitNewsletterCampaign = async (event) => {
+    event.preventDefault();
+
+    if (!accessToken) {
+      setNewsletterError("No hay sesión activa.");
+      return;
+    }
+
+    setIsSendingNewsletter(true);
+    setNewsletterError("");
+    setNewsletterSuccess("");
+
+    try {
+      const response = await requestJson("/newsletter/admin/send-campaign", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          subject: newsletterForm.subject.trim(),
+          message: newsletterForm.message.trim(),
+        }),
+      });
+
+      setNewsletterSuccess(
+        response?.message || "Campaña enviada correctamente.",
+      );
+      setNewsletterForm((current) => ({
+        ...current,
+        subject: "",
+        message: "",
+      }));
+    } catch (requestError) {
+      setNewsletterError(
+        requestError.message || "No se pudo enviar la campaña.",
+      );
+    } finally {
+      setIsSendingNewsletter(false);
+    }
+  };
+
   const submitProduct = async (event) => {
     event.preventDefault();
 
@@ -312,53 +503,7 @@ export default function Admin() {
       return;
     }
 
-    const mainImage = form.image.trim();
-    const rawExtraImages = form.imageRows
-      .map((row) => row.url.trim())
-      .filter(Boolean);
-
-    const seenImages = new Set(mainImage ? [mainImage] : []);
-    const uniqueExtraImages = [];
-    const duplicateImages = [];
-
-    for (const image of rawExtraImages) {
-      if (seenImages.has(image)) {
-        duplicateImages.push(image);
-        continue;
-      }
-
-      seenImages.add(image);
-      uniqueExtraImages.push(image);
-    }
-
-    if (uniqueExtraImages.length > MAX_EXTRA_IMAGES) {
-      uniqueExtraImages.length = MAX_EXTRA_IMAGES;
-    }
-
-    const payload = {
-      id: Number(form.id),
-      brand: form.brand.trim(),
-      name: form.name.trim(),
-      price: Number(form.price),
-      originalPrice:
-        form.originalPrice === "" || form.originalPrice === null
-          ? null
-          : Number(form.originalPrice),
-      badge: form.badge.trim(),
-      image: mainImage,
-      images: uniqueExtraImages,
-      subcategories: splitLines(form.subcategoriesText),
-      category: form.category.trim().toLowerCase(),
-      isOffer: Boolean(form.isOffer),
-      stockBySize: form.stockRows
-        .map((row) => ({
-          size: String(row.size || "")
-            .trim()
-            .toUpperCase(),
-          stock: Number(row.stock) || 0,
-        }))
-        .filter((row) => row.size),
-    };
+    let mainImage = form.image.trim();
 
     setIsSaving(true);
     setError("");
@@ -366,6 +511,76 @@ export default function Admin() {
     setImageWarning("");
 
     try {
+      if (mainImageFile) {
+        mainImage = await uploadImageFile(mainImageFile);
+      }
+
+      if (!mainImage) {
+        throw new Error(
+          "Debes seleccionar una imagen principal antes de guardar.",
+        );
+      }
+
+      const rawExtraImages = [];
+
+      for (const row of form.imageRows) {
+        if (row.file) {
+          const uploadedUrl = await uploadImageFile(row.file);
+          if (uploadedUrl) {
+            rawExtraImages.push(uploadedUrl);
+          }
+          continue;
+        }
+
+        const existingUrl = row.url.trim();
+        if (existingUrl) {
+          rawExtraImages.push(existingUrl);
+        }
+      }
+
+      const seenImages = new Set(mainImage ? [mainImage] : []);
+      const uniqueExtraImages = [];
+      const duplicateImages = [];
+
+      for (const image of rawExtraImages) {
+        if (seenImages.has(image)) {
+          duplicateImages.push(image);
+          continue;
+        }
+
+        seenImages.add(image);
+        uniqueExtraImages.push(image);
+      }
+
+      if (uniqueExtraImages.length > MAX_EXTRA_IMAGES) {
+        uniqueExtraImages.length = MAX_EXTRA_IMAGES;
+      }
+
+      const payload = {
+        id: Number(form.id),
+        brand: form.brand.trim(),
+        name: form.name.trim(),
+        price: Number(form.price),
+        originalPrice:
+          form.originalPrice === "" || form.originalPrice === null
+            ? null
+            : Number(form.originalPrice),
+        badge: form.badge.trim(),
+        image: mainImage,
+        images: uniqueExtraImages,
+        subcategories: splitLines(form.subcategoriesText),
+        category: form.category.trim().toLowerCase(),
+        isOffer: Boolean(form.isOffer),
+        stockBySize: form.stockRows
+          .map((row) => ({
+            size: String(row.size || "")
+              .trim()
+              .toUpperCase(),
+            stock: Number(row.stock) || 0,
+          }))
+          .filter((row) => row.size),
+      };
+
       const requestOptions = {
         method: selectedProduct ? "PATCH" : "POST",
         headers: {
@@ -386,6 +601,11 @@ export default function Admin() {
         : [];
       setProducts(refreshedList);
       setSelectedProductId(savedProduct.id ?? payload.id);
+      setMainImageFile(null);
+      setMainImagePreviewUrl((current) => {
+        revokeObjectUrl(current);
+        return "";
+      });
       setSuccessMessage(
         selectedProduct
           ? "Producto actualizado correctamente."
@@ -404,19 +624,19 @@ export default function Admin() {
   };
 
   const previewImages = useMemo(() => {
-    const mainImage = form.image.trim();
+    const mainImage = mainImagePreviewUrl || form.image.trim();
     const extraImages = form.imageRows
-      .map((row) => row.url.trim())
+      .map((row) => row.previewUrl || row.url.trim())
       .filter(Boolean);
     return Array.from(
       new Set([mainImage, ...extraImages].filter(Boolean)),
     ).slice(0, MAX_TOTAL_IMAGES);
-  }, [form.image, form.imageRows]);
+  }, [form.image, form.imageRows, mainImagePreviewUrl]);
 
   const duplicateImageCount = useMemo(() => {
-    const mainImage = form.image.trim();
+    const mainImage = mainImagePreviewUrl || form.image.trim();
     const extraImages = form.imageRows
-      .map((row) => row.url.trim())
+      .map((row) => row.previewUrl || row.url.trim())
       .filter(Boolean);
 
     const seen = new Set(mainImage ? [mainImage] : []);
@@ -432,7 +652,7 @@ export default function Admin() {
     }
 
     return duplicates;
-  }, [form.image, form.imageRows]);
+  }, [form.image, form.imageRows, mainImagePreviewUrl]);
 
   if (!isAdmin) {
     return (
@@ -597,15 +817,35 @@ export default function Admin() {
 
               <label>
                 Imagen principal
-                <input
-                  type="url"
-                  value={form.image}
-                  onChange={(event) =>
-                    handleFieldChange("image", event.target.value)
-                  }
-                  placeholder="https://..."
-                  required
-                />
+                <div className="admin-upload-row">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleMainImageFileChange}
+                  />
+                  <button
+                    type="button"
+                    className="admin-secondary-btn"
+                    onClick={() => {
+                      handleFieldChange("image", "");
+                      setMainImageFile(null);
+                      setMainImagePreviewUrl((current) => {
+                        revokeObjectUrl(current);
+                        return "";
+                      });
+                    }}
+                    disabled={!form.image && !mainImageFile}
+                  >
+                    Limpiar
+                  </button>
+                </div>
+                <small className="admin-helper-text admin-helper-text-inline">
+                  {mainImageFile
+                    ? "Imagen principal lista para subir al guardar producto."
+                    : form.image
+                      ? "Imagen principal actual cargada desde URL guardada."
+                      : "Selecciona imagen principal (se sube al guardar producto)."}
+                </small>
               </label>
 
               <div className="admin-grid admin-grid-2">
@@ -649,14 +889,22 @@ export default function Admin() {
               <div className="admin-image-list">
                 {form.imageRows.map((row, index) => (
                   <div className="admin-image-row" key={`image-${index}`}>
-                    <input
-                      type="url"
-                      value={row.url}
-                      onChange={(event) =>
-                        handleImageRowChange(index, event.target.value)
-                      }
-                      placeholder={`URL de imagen extra ${index + 1}`}
-                    />
+                    <div className="admin-image-upload-col">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                          handleExtraImageFileChange(index, event)
+                        }
+                      />
+                      <small className="admin-helper-text admin-helper-text-inline">
+                        {row.file
+                          ? `Imagen extra ${index + 1} lista para subir al guardar.`
+                          : row.url
+                            ? `Imagen extra ${index + 1} actual cargada desde URL guardada.`
+                            : `Selecciona imagen extra ${index + 1} (se sube al guardar).`}
+                      </small>
+                    </div>
                     <button
                       type="button"
                       className="admin-remove-btn"
@@ -671,7 +919,8 @@ export default function Admin() {
 
               <p className="admin-helper-text">
                 La imagen principal ya cuenta como una. Puedes registrar hasta 4
-                extras.
+                extras. En edición, si no subes nuevas imágenes se conservan las
+                URLs existentes.
               </p>
               {duplicateImageCount > 0 && (
                 <p className="admin-warning">
@@ -855,6 +1104,82 @@ export default function Admin() {
                 )}
               </div>
             </form>
+          </section>
+
+          <section className="admin-section admin-user-section">
+            <div className="admin-section-header">
+              <h2>Newsletter</h2>
+              <span>{subscriberCount} suscriptor(es)</span>
+            </div>
+
+            <div className="admin-user-form">
+              {isLoadingSubscribers ? (
+                <p className="admin-helper-text">Cargando suscriptores...</p>
+              ) : subscribers.length > 0 ? (
+                <div className="admin-user-roles">
+                  <span>Últimos suscriptores</span>
+                  {subscribers.slice(0, 8).map((subscriber) => (
+                    <p key={subscriber.email} className="admin-helper-text">
+                      {subscriber.email}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="admin-helper-text">
+                  Aún no hay correos registrados.
+                </p>
+              )}
+
+              <form
+                className="admin-user-form"
+                onSubmit={submitNewsletterCampaign}
+              >
+                <label>
+                  Asunto
+                  <input
+                    type="text"
+                    value={newsletterForm.subject}
+                    onChange={(event) =>
+                      handleNewsletterFieldChange("subject", event.target.value)
+                    }
+                    required
+                    minLength={3}
+                    maxLength={120}
+                  />
+                </label>
+
+                <label>
+                  Mensaje
+                  <textarea
+                    rows="6"
+                    value={newsletterForm.message}
+                    onChange={(event) =>
+                      handleNewsletterFieldChange("message", event.target.value)
+                    }
+                    required
+                    minLength={10}
+                    maxLength={10000}
+                    placeholder="Escribe aquí el contenido de tu campaña..."
+                  />
+                </label>
+
+                <div className="admin-actions">
+                  <button
+                    type="submit"
+                    className="admin-primary-btn"
+                    disabled={isSendingNewsletter || subscriberCount === 0}
+                  >
+                    {isSendingNewsletter ? "Enviando..." : "Enviar campaña"}
+                  </button>
+                  {newsletterSuccess && (
+                    <p className="admin-success">{newsletterSuccess}</p>
+                  )}
+                  {newsletterError && (
+                    <p className="admin-error">{newsletterError}</p>
+                  )}
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       </div>

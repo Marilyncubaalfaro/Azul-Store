@@ -53,6 +53,26 @@
   margin: 6px 0;
 }
 
+.phone-form {
+  margin-top: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.phone-form label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.phone-form input {
+  border: 1px solid #141414;
+  background: #fff;
+  min-height: 40px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
 .profile-logout-btn {
   width: 100%;
   margin-top: 15px;

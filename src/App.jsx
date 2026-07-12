@@ -8,6 +8,16 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
+import {
+  AccesoriosPage,
+  ContactoPage,
+  EnvioPage,
+  NuestrasTiendasPage,
+  PrivacidadPage,
+  ReclamacionesPage,
+  SobreNosotrosPage,
+  TerminosPage,
+} from "./pages/StaticPages";
 import RequireAuth from "./components/AuthGuard";
 
 function App() {
@@ -20,6 +30,14 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />
+        <Route path="/nuestras-tiendas" element={<NuestrasTiendasPage />} />
+        <Route path="/contacto" element={<ContactoPage />} />
+        <Route path="/terminos" element={<TerminosPage />} />
+        <Route path="/privacidad" element={<PrivacidadPage />} />
+        <Route path="/envio" element={<EnvioPage />} />
+        <Route path="/reclamaciones" element={<ReclamacionesPage />} />
+        <Route path="/accesorios" element={<AccesoriosPage />} />
         <Route
           path="/account"
           element={

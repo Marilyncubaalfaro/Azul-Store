@@ -66,10 +66,23 @@
   cursor: pointer;
 }
 
+.newsletter button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .newsletter .form-message {
   min-height: 16px;
   margin: 12px 0 0;
   color: #fff;
+}
+
+.newsletter .form-message--error {
+  color: #fecaca;
+}
+
+.newsletter .form-message--success {
+  color: #bbf7d0;
 }
 
 /* ===== Responsive Footer ===== */

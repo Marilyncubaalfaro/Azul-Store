@@ -7,8 +7,14 @@ import "./Account.css";
 
 export default function Account() {
   useScrollOnRouteChange();
-  const { user, accessToken, logout, fetchCurrentUser, updateShippingAddress } =
-    useAuth();
+  const {
+    user,
+    accessToken,
+    logout,
+    fetchCurrentUser,
+    updateShippingAddress,
+    updatePhone,
+  } = useAuth();
   const [addressForm, setAddressForm] = useState({
     line1: "",
     city: "",
@@ -17,6 +23,10 @@ export default function Account() {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressError, setAddressError] = useState("");
+  const [phoneForm, setPhoneForm] = useState("");
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
   const [orders, setOrders] = useState([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [ordersError, setOrdersError] = useState("");
@@ -34,6 +44,7 @@ export default function Account() {
       city: user?.address?.city || "",
       country: user?.address?.country || "",
     });
+    setPhoneForm(user?.phone || "");
   }, [user]);
 
   useEffect(() => {
@@ -136,6 +147,34 @@ export default function Account() {
     setAddressForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handlePhoneInputChange = (value) => {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 9);
+    setPhoneForm(digitsOnly);
+  };
+
+  const handlePhoneSubmit = async (event) => {
+    event.preventDefault();
+    setPhoneError("");
+
+    if (!/^9\d{8}$/.test(phoneForm)) {
+      setPhoneError(
+        "Ingresa un celular de Peru valido (9 digitos, por ejemplo 912345678).",
+      );
+      return;
+    }
+
+    setIsSavingPhone(true);
+
+    try {
+      await updatePhone(phoneForm);
+      setIsEditingPhone(false);
+    } catch (error) {
+      setPhoneError(error.message || "No se pudo actualizar el celular.");
+    } finally {
+      setIsSavingPhone(false);
+    }
+  };
+
   const handleAddressSubmit = async (event) => {
     event.preventDefault();
     setAddressError("");
@@ -174,6 +213,59 @@ export default function Account() {
             <p>
               <strong>Email:</strong> {user?.email || "Sin email"}
             </p>
+            {isEditingPhone ? (
+              <form className="phone-form" onSubmit={handlePhoneSubmit}>
+                <label htmlFor="profile-phone">Celular (Peru)</label>
+                <input
+                  id="profile-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="912345678"
+                  value={phoneForm}
+                  onChange={(event) =>
+                    handlePhoneInputChange(event.target.value)
+                  }
+                  minLength={9}
+                  maxLength={9}
+                  pattern="9[0-9]{8}"
+                  required
+                />
+                {phoneError && <p className="address-error">{phoneError}</p>}
+                <div className="address-form-actions">
+                  <button
+                    className="profile-edit-btn"
+                    type="button"
+                    onClick={() => {
+                      setIsEditingPhone(false);
+                      setPhoneError("");
+                      setPhoneForm(user?.phone || "");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="add-to-cart-btn"
+                    type="submit"
+                    disabled={isSavingPhone}
+                  >
+                    {isSavingPhone ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p>
+                  <strong>Celular:</strong> {user?.phone || "No configurado"}
+                </p>
+                <button
+                  className="profile-edit-btn"
+                  onClick={() => setIsEditingPhone(true)}
+                >
+                  Editar celular
+                </button>
+              </>
+            )}
             <p>
               <strong>Socio desde:</strong> {joinDate}
             </p>
