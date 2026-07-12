@@ -32,7 +32,7 @@ export default function Cart() {
     setIsCheckingOut(true);
 
     try {
-      await requestJson("/orders/checkout", {
+      const response = await requestJson("/orders/mercadopago/preference", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,8 +47,11 @@ export default function Cart() {
         }),
       });
 
-      clearCart();
-      navigate("/account");
+      if (!response?.checkoutUrl) {
+        throw new Error("No se pudo generar el checkout de Mercado Pago.");
+      }
+
+      window.location.href = response.checkoutUrl;
     } catch (error) {
       setCheckoutError(error.message || "No se pudo completar el pago.");
     } finally {
