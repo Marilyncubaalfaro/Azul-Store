@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProductDetail from "./pages/ProductDetail";
 import Admin from "./pages/Admin";
+import CheckoutStatus from "./pages/CheckoutStatus";
 import {
   AccesoriosPage,
   ContactoPage,
@@ -28,6 +29,18 @@ function App() {
         <Route path="/shop/:category" element={<Shop />} />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
+        <Route
+          path="/checkout/success"
+          element={<CheckoutStatus type="success" />}
+        />
+        <Route
+          path="/checkout/pending"
+          element={<CheckoutStatus type="pending" />}
+        />
+        <Route
+          path="/checkout/failure"
+          element={<CheckoutStatus type="failure" />}
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/sobre-nosotros" element={<SobreNosotrosPage />} />

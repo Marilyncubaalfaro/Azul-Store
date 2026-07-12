@@ -1,0 +1,59 @@
+.checkout-status-page {
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  padding: 40px 20px 70px;
+}
+
+.checkout-status-card {
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  background: #eef3e5;
+  padding: 24px;
+}
+
+.checkout-status-eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #7c786a;
+}
+
+.checkout-status-card h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.checkout-status-card p {
+  color: #555;
+  line-height: 1.7;
+}
+
+.checkout-status-note {
+  margin-top: 12px;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.checkout-status-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.checkout-status-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(20, 20, 20, 0.18);
+  text-decoration: none;
+  color: #141414;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
