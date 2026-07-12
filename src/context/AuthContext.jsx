@@ -29,11 +29,11 @@ export function AuthProvider({ children }) {
     return data.user ?? null;
   }, []);
 
-  const register = useCallback(async (name, email, password) => {
+  const register = useCallback(async (name, email, password, phone) => {
     const data = await requestJson("/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, phone }),
     });
 
     return data.user ?? null;
@@ -92,6 +92,27 @@ export function AuthProvider({ children }) {
     [accessToken],
   );
 
+  const updatePhone = useCallback(
+    async (phone) => {
+      if (!accessToken) {
+        throw new Error("No hay sesion activa.");
+      }
+
+      const data = await requestJson("/auth/me/phone", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ phone }),
+      });
+
+      setUser(data ?? null);
+      return data ?? null;
+    },
+    [accessToken],
+  );
+
   useEffect(() => {
     let isMounted = true;
 
@@ -127,6 +148,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       updateShippingAddress,
+      updatePhone,
       refreshSession,
       fetchCurrentUser,
     }),
@@ -139,6 +161,7 @@ export function AuthProvider({ children }) {
       register,
       logout,
       updateShippingAddress,
+      updatePhone,
       refreshSession,
       fetchCurrentUser,
     ],
